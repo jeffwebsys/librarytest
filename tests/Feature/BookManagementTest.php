@@ -7,7 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use App\Book;
 
-class BookReservationTest extends TestCase
+class BookManagementTest extends TestCase
 {
 	#replica of the database
 	use RefreshDatabase;
@@ -25,11 +25,14 @@ class BookReservationTest extends TestCase
 		'author' => 'Jeff',
 
         ]);
-       #if asserts is ok then true
-        $response->assertOk();
+        $book = Book::first();
+        #if asserts is ok then true
+        // not need if asserting a redirect $response->assertOk();
+        
 
         #this match the database if we added unto it
         $this->assertCount(1, Book::all());
+        $response->assertRedirect($book->path());
 
    	 }
 
@@ -70,7 +73,7 @@ class BookReservationTest extends TestCase
 		//updating the book
 		public function a_book_can_be_updated(){
 
-		// $this->withoutExceptionHandling();
+		$this->withoutExceptionHandling();
        	$this->post('/books',[
 
 		'title' => 'Cool Title',
@@ -78,8 +81,8 @@ class BookReservationTest extends TestCase
 		]);
 
 		$book = Book::first();
-
-		$response = $this->patch('/books/'.$book->id,[
+		//used path helper to access model helper
+		$response = $this->patch($book->fresh()->path(),[
 
 		'title' => 'New Title',
 		'author' => 'New Author',
@@ -87,8 +90,25 @@ class BookReservationTest extends TestCase
 
 		$this->assertEquals('New Title', Book::first()->title);
 		$this->assertEquals('New Author', Book::first()->author);
+		//$book->id used fresh helper to regain record from DB
+		$response->assertRedirect($book->path());
+		}
+		/** @test */
+		public function a_book_can_be_deleted(){
+		$this->withoutExceptionHandling();
+		$this->post('/books',[
 
+		'title' => 'Cool Title',
+		'author' => 'Jeff',
+		]);
 
+		$book = Book::first();
+		$this->assertCount(1,Book::all());
+
+		$response = $this->delete($book->path());
+
+		$this->assertCount(0,Book::all());
+		$response->assertRedirect('/books');
 
 		}
 
